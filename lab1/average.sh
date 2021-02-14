@@ -5,10 +5,10 @@ then
 for value in "$@"; do
 	total=$(( total + value ))
 done
-echo "Amount of arguements: $#"
+echo "Amount of arguments: $#"
 result=$(( total / $#))
 echo "Average: $result"
 else
-echo "There are no arguements."
+echo "There are no arguments."
 fi
 exit 0
