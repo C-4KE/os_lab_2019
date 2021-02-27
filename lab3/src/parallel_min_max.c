@@ -100,7 +100,8 @@ int main(int argc, char **argv) {
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
 
-  for (int i = 0; i < pnum; i++) {
+  int i;
+  for (i = 0; i < pnum; i++) {
     pid_t child_pid = fork();
     if (child_pid >= 0) {
       // successful fork
@@ -109,9 +110,30 @@ int main(int argc, char **argv) {
         // child process
 
         // parallel somehow
-
+        int j;
+        int min = INT_MAX;
+        for (j = 0; j < array_size; j++)
+        {
+            if (array[j] < min)
+            {
+                min = array[j];
+            }
+        }
         if (with_files) {
           // use files here
+          FILE* file;
+          if ((file = fopen("min_value.txt", "w")) != NULL)
+          {
+            char buff[30];
+            sprintf(buff, "%d", min);
+            fputs(buff, file);
+            fclose(file);
+          }
+          else
+          {
+              printf("Error with writing value to the file.\n");
+              return 1;
+          }
         } else {
           // use pipe here
         }
@@ -124,9 +146,22 @@ int main(int argc, char **argv) {
     }
   }
 
+  bool is_max_found = false;
+  int parent_max = INT_MIN;
   while (active_child_processes > 0) {
     // your code here
-
+    if (!is_max_found)
+    {
+        int i;
+        for (i = 0; i < array_size; i++)
+        {
+            if (array[i] > parent_max)
+            {
+                parent_max = array[i];
+            }
+        }
+        is_max_found = true;
+    }
     active_child_processes -= 1;
   }
 
@@ -136,10 +171,24 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < pnum; i++) {
     int min = INT_MAX;
-    int max = INT_MIN;
+    //int max = INT_MIN;
+    int max = parent_max;
 
     if (with_files) {
-      // read from files
+        // read from files
+        FILE* file;
+        if ((file = fopen("min_value.txt", "r")) != NULL)
+        {
+            char buff[30];
+            fgets(buff, 29, file);
+            min = atoi(buff);
+            fclose(file);
+        }
+        else
+        {
+            printf("Error with reading file.\n");
+            return 1;
+        }
     } else {
       // read from pipes
     }
