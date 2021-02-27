@@ -42,11 +42,20 @@ int main(int argc, char **argv) {
             seed = atoi(optarg);
             // your code here
             // error handling
+            if (!seed)
+            {
+                printf("");
+                return 1;
+            }
             break;
           case 1:
             array_size = atoi(optarg);
             // your code here
             // error handling
+            if (!array_size)
+            {
+                return 1;
+            }
             break;
           case 2:
             pnum = atoi(optarg);
