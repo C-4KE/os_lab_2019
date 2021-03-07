@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
             // error handling
             if (!seed)
             {
-                printf("");
+                printf("Seed must be a positive number.");
                 return 1;
             }
             break;
@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
             // error handling
             if (!array_size)
             {
+                printf("Size of an array must be a positive number.");
                 return 1;
             }
             break;
@@ -61,6 +62,11 @@ int main(int argc, char **argv) {
             pnum = atoi(optarg);
             // your code here
             // error handling
+            if (!pnum)
+            {
+                printf("pnum must be a positive number.");
+                return 1;
+            }
             break;
           case 3:
             with_files = true;
@@ -101,13 +107,26 @@ int main(int argc, char **argv) {
   gettimeofday(&start_time, NULL);
 
   int i;
+  int pipefd[2];
+  if (pipe(pipefd) == -1)
+  {
+      printf("Error with creating pipe.\n");
+      return 1;
+  }
+  pid_t main_pid;
   for (i = 0; i < pnum; i++) {
     pid_t child_pid = fork();
     if (child_pid >= 0) {
       // successful fork
       active_child_processes += 1;
+      if (active_child_processes == 1)
+      {
+          main_pid = child_pid;
+      }
       if (child_pid == 0) {
-        // child process
+        if (active_child_processes == 1)
+        {
+            // child process
 
         // parallel somehow
         int j;
@@ -121,6 +140,8 @@ int main(int argc, char **argv) {
         }
         if (with_files) {
           // use files here
+          close(pipefd[0]);
+          close(pipefd[1]);
           FILE* file;
           if ((file = fopen("min_value.txt", "w")) != NULL)
           {
@@ -135,9 +156,22 @@ int main(int argc, char **argv) {
               return 1;
           }
         } else {
-          // use pipe here
+
+            // use pipe here
+            close(pipefd[0]);
+            char buff[30];
+            sprintf(buff, "%d", min);
+            write(pipefd[1], buff, strlen(buff));
+            close(pipefd[1]);
         }
         return 0;
+        }
+        else
+        {
+            close(pipefd[0]);
+            close(pipefd[1]);
+            return 0;
+        }
       }
 
     } else {
@@ -169,13 +203,14 @@ int main(int argc, char **argv) {
   min_max.min = INT_MAX;
   min_max.max = INT_MIN;
 
-  for (int i = 0; i < pnum; i++) {
+  //for (int i = 0; i < pnum; i++) {
     int min = INT_MAX;
     //int max = INT_MIN;
     int max = parent_max;
 
     if (with_files) {
         // read from files
+        waitpid(main_pid, NULL, 0);
         FILE* file;
         if ((file = fopen("min_value.txt", "r")) != NULL)
         {
@@ -191,11 +226,22 @@ int main(int argc, char **argv) {
         }
     } else {
       // read from pipes
+        char number[30];
+        char buff;
+        close(pipefd[1]);
+        int i = 0;
+        while(read(pipefd[0], &buff, 1) > 0)
+        {
+            number[i] = buff;
+            i++;
+        }
+        min = atoi(number);
+        close(pipefd[0]);
     }
 
     if (min < min_max.min) min_max.min = min;
     if (max > min_max.max) min_max.max = max;
-  }
+  //}
 
   struct timeval finish_time;
   gettimeofday(&finish_time, NULL);
