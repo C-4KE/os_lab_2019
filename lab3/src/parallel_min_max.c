@@ -224,6 +224,7 @@ int main(int argc, char **argv) {
             printf("Error with reading file.\n");
             return 1;
         }
+        remove("min_value.txt");
     } else {
       // read from pipes
         char number[30];
