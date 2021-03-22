@@ -67,11 +67,6 @@ int main(int argc, char **argv) {
                 printf("pnum must be a positive number.");
                 return 1;
             }
-            if (pnum > array_size / 2)
-            {
-                printf("pnum must be lower, than array_size / 2");
-                return 1;
-            }
             break;
           case 3:
             with_files = true;
