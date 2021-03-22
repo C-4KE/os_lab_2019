@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
             // error handling
             if (!seed)
             {
-                printf("Seed must be a positive number.");
+                printf("Seed must be a positive number.\n");
                 return 1;
             }
             break;
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
             // error handling
             if (!array_size)
             {
-                printf("Size of an array must be a positive number.");
+                printf("Size of an array must be a positive number.\n");
                 return 1;
             }
             break;
@@ -64,7 +64,21 @@ int main(int argc, char **argv) {
             // error handling
             if (!pnum)
             {
-                printf("pnum must be a positive number.");
+                printf("pnum must be a positive number.\n");
+                return 1;
+            }
+            int amount_of_children;
+            if (array_size % 2 == 0)
+            {
+                amount_of_children = array_size / 2;
+            }
+            else
+            {
+                amount_of_children = (array_size / 2) + 1;
+            }
+            if (pnum > amount_of_children)
+            {
+                printf("Number of processes is too big. It must not exceed %d for array with size %d.\n", amount_of_children, array_size);
                 return 1;
             }
             break;
@@ -72,7 +86,7 @@ int main(int argc, char **argv) {
             with_files = true;
             break;
 
-          defalut:
+          default:
             printf("Index %d is out of options\n", option_index);
         }
         break;
@@ -131,82 +145,84 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
-    int amount_of_children;
-    if (array_size % 2 == 0)
+    int step;
+    if (array_size > pnum)
     {
-        amount_of_children = array_size / 2;
+        step = array_size / pnum;
+        if ((array_size % pnum != 0))
+        {
+        step += 1;
+        }
     }
-    else
+    else 
     {
-        amount_of_children = (array_size / 2) + 1;
+        step = 2;
     }
     pid_t child_pid = fork();
     if (child_pid >= 0) {
       // successful fork
       active_child_processes += 1;
-      if (child_pid == 0) {
+      if (child_pid == 0) 
+        {
             // child process
 
         // parallel somehow
-        int j;
-        int min = INT_MAX;
-        int max = INT_MIN;
-        int end;
-        int step = array_size / pnum;
-        if (array_size % pnum != 0)
-        {
-            step += 1;
-        }
-        if ((active_child_processes - 1) * 2 + step < array_size)
-        {
-            end = (active_child_processes - 1) * 2 + step;
-        }
-        else 
-        {
-            end = array_size;
-        }
-        for (j = (active_child_processes - 1) * 2; j < end; j++)
-        {
-            if (array[j] < min)
+            int j;
+            int min = INT_MAX;
+            int max = INT_MIN;
+            int start;
+            int end;
+            if ((active_child_processes - 1) * step + step < array_size)
+                {
+                    end = (active_child_processes - 1) * step + step;
+                }
+                else 
+                {
+                    end = array_size;
+                }
+                start = (active_child_processes - 1) * step;
+            for (j = start; j < end; j++)
             {
-                min = array[j];
+                if (array[j] < min)
+                {
+                    min = array[j];
+                }
+                if (array[j] > max)
+                {
+                    max = array[j];
+                }
             }
-            if (array[j] > max)
+            if (with_files) {
+            // use files here
+            FILE* file;
+            if ((file = fopen("min_value.txt", "a")) != NULL)
             {
-                max = array[j];
+                char buff[30];
+                sprintf(buff, "%d", min);
+                fputs(buff, file);
+                fputc('\n', file);
+                fclose(file);
             }
-        }
-        if (with_files) {
-          // use files here
-          FILE* file;
-          if ((file = fopen("min_value.txt", "a")) != NULL)
-          {
-            char buff[30];
-            sprintf(buff, "%d", min);
-            fputs(buff, file);
-            fputc('\n', file);
-            fclose(file);
-          }
-          if ((file = fopen("max_value.txt", "a")) != NULL)
-          {
-            char buff[30];
-            sprintf(buff, "%d", min);
-            fputs(buff, file);
-            fputc('\n', file);
-            fclose(file);
-          }
-          else
-          {
-              printf("Error with writing value to the file.\n");
-              return 1;
-          }
-        } else {
+            if ((file = fopen("max_value.txt", "a")) != NULL)
+            {
+                char buff[30];
+                sprintf(buff, "%d", max);
+                fputs(buff, file);
+                fputc('\n', file);
+                fclose(file);
+            }
+            else
+            {
+                printf("Error with writing value to the file.\n");
+                return 1;
+            }
+            } else {
 
-            // use pipe here
-            write(pipefd_min[i][1], &min, sizeof(int));
-            write(pipefd_max[i][1], &max, sizeof(int));
-        }
-        return 0;
+                // use pipe here
+                write(pipefd_min[i][1], &min, sizeof(int));
+                write(pipefd_max[i][1], &max, sizeof(int));
+            }
+            return 0;
         }
     } else {
       printf("Fork failed!\n");
