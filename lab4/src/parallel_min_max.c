@@ -15,6 +15,11 @@
 #include "find_min_max.h"
 #include "utils.h"
 
+void signal_handler(int signum)
+{
+    //kill(0, SIGKILL);
+}
+
 int main(int argc, char **argv) {
   int seed = -1;
   int array_size = -1;
