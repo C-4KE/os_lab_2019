@@ -17,7 +17,26 @@
 
 void signal_handler(int signum)
 {
-    //kill(0, SIGKILL);
+    FILE* file;
+    if ((file = fopen("pids.txt", "r")) != NULL)
+    {
+        int i, pnum, status;
+        char buff[30];
+        fgets(buff, 29, file);
+        pnum = atoi(buff);
+        for (i = 0; i < pnum; i++)
+        {
+            char buff[30];
+            fgets(buff, 29, file);
+            int p_id = atoi(buff);
+            waitpid(p_id, &status, WNOHANG);
+            if (WIFEXITED(status)) // Если процесс не завершился
+            {
+                kill(p_id, SIGKILL);
+            }
+        }
+        fclose(file);
+    }
 }
 
 int main(int argc, char **argv) {
@@ -136,6 +155,28 @@ int main(int argc, char **argv) {
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
 
+  signal(SIGALRM, signal_handler);
+
+  if (timeout)
+  {
+        alarm(timeout);
+  }
+
+  FILE* file; // For children' pids
+    if ((file = fopen("pids.txt", "w")) != NULL)
+    {
+        char buff[30];
+        sprintf(buff, "%d", pnum);
+        fputs(buff, file);
+        fputc('\n', file);
+        fclose(file);
+    }
+    else
+    {
+        printf("Error while creating a file.\n");
+        return 1;
+    }
+
   int i;
   int** pipefd_min;
   int** pipefd_max;
@@ -178,6 +219,23 @@ int main(int argc, char **argv) {
     if (child_pid >= 0) {
       // successful fork
       active_child_processes += 1;
+      if (child_pid > 0)
+      {
+          FILE* file;
+          if ((file = fopen("pids.txt", "a")) != NULL)
+            {
+                char buff[30];
+                sprintf(buff, "%d", child_pid);
+                fputs(buff, file);
+                fputc('\n', file);
+                fclose(file);
+            }
+            else
+            {
+                printf("Error with writing pid to the file.\n");
+                return 1;
+            }
+      }
       if (child_pid == 0) 
         {
             // child process
@@ -218,6 +276,11 @@ int main(int argc, char **argv) {
                 fputs(buff, file);
                 fputc('\n', file);
                 fclose(file);
+            }
+            else
+            {
+                printf("Error with writing value to the file.\n");
+                return 1;
             }
             if ((file = fopen("max_value.txt", "a")) != NULL)
             {
@@ -332,14 +395,33 @@ int main(int argc, char **argv) {
       free(pipefd_min);
       free(pipefd_max);
   }
+
   remove("min_value.txt");
   remove("max_value.txt");
+  
 
   struct timeval finish_time;
   gettimeofday(&finish_time, NULL);
 
   double elapsed_time = (finish_time.tv_sec - start_time.tv_sec) * 1000.0;
   elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
+  
+  if ((file = fopen("pids.txt", "r")) != NULL)
+  {
+    int i, p_num, status;
+    char buff[30];
+    fgets(buff, 29, file);
+    p_num = atoi(buff);
+    for (i = 0; i < p_num; i++)
+    {
+        char buff[30];
+        fgets(buff, 29, file);
+        int p_id = atoi(buff);
+        waitpid(p_id, &status, 0);
+    }
+    fclose(file);
+  }
+  remove("pids.txt");
 
   free(array);
 
