@@ -3,7 +3,7 @@ CFLAGS=-I.
 
 .PHONY: all clean
 
-all: parallel_min_max zombies
+all: parallel_min_max zombies process_memory
 
 parallel_min_max: utils.o find_min_max.o utils.h find_min_max.h
 	$(CC) parallel_min_max.c utils.o find_min_max.o -o parallel_min_max $(CFLAGS)
@@ -16,6 +16,9 @@ find_min_max.o: find_min_max.h utils.h
 
 zombies: 
 	$(CC) zombies.c -o zombies
+
+process_memory:
+	$(CC) process_memory.c -o process_memory
  
 clean:
-	rm parallel_min_max utils.o find_min_max.o zombies
+	rm parallel_min_max utils.o find_min_max.o zombies process_memory
