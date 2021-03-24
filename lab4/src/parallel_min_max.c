@@ -311,10 +311,7 @@ int main(int argc, char **argv) {
   
   while (active_child_processes > 0) {
     // your code here
-    if (with_files)
-    {
-        wait(NULL);
-    }
+    waitpid(0, NULL, 0);
     active_child_processes -= 1;
   }
 
@@ -385,6 +382,14 @@ int main(int argc, char **argv) {
     if (max > min_max.max) min_max.max = max;
   }
 
+  struct timeval finish_time;
+  gettimeofday(&finish_time, NULL);
+
+  double elapsed_time = (finish_time.tv_sec - start_time.tv_sec) * 1000.0;
+  elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
+
+  free(array);
+
   if (with_files)
   {
     fclose(min_file);
@@ -398,32 +403,7 @@ int main(int argc, char **argv) {
 
   remove("min_value.txt");
   remove("max_value.txt");
-  
-
-  struct timeval finish_time;
-  gettimeofday(&finish_time, NULL);
-
-  double elapsed_time = (finish_time.tv_sec - start_time.tv_sec) * 1000.0;
-  elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
-  
-  if ((file = fopen("pids.txt", "r")) != NULL)
-  {
-    int i, p_num, status;
-    char buff[30];
-    fgets(buff, 29, file);
-    p_num = atoi(buff);
-    for (i = 0; i < p_num; i++)
-    {
-        char buff[30];
-        fgets(buff, 29, file);
-        int p_id = atoi(buff);
-        waitpid(p_id, &status, 0);
-    }
-    fclose(file);
-  }
   remove("pids.txt");
-
-  free(array);
 
   printf("Min: %d\n", min_max.min);
   printf("Max: %d\n", min_max.max);
