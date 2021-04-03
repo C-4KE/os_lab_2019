@@ -1,12 +1,15 @@
 CC=gcc
-FLAGS=-I.
+FLAGS=-lpthread -I.
 
 .PHONY: all clean
 
-all: mutex
+all: mutex mod_factorial
 
 mutex:
-	$(CC) mutex.c -o mutex -lpthread $(FLAGS)
+	$(CC) mutex.c -o mutex $(FLAGS)
+
+mod_factorial:
+	$(CC) mod_factorial.c -o mod_factorial $(FLAGS)
 
 clean:
-	rm mutex
+	rm mutex mod_factorial
