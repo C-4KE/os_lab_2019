@@ -6,7 +6,7 @@ FLAGS=-I.
 all: mutex
 
 mutex:
-	$(CC) mutex.c -o mutex $(FLAGS)
+	$(CC) mutex.c -o mutex -lpthread $(FLAGS)
 
 clean:
 	rm mutex
