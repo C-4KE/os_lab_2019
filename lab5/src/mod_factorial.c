@@ -9,6 +9,8 @@ struct arguments
     int result;
     int count;
     int mod;
+    int end_count;
+    int end;
 };
 
 int evaluate_mod_factorial(int k, int mod, int threads_num); // Функция, организующая потоки для вычисления факториала
@@ -119,37 +121,43 @@ int evaluate_mod_factorial(int k, int mod, int threads_num) // Функция, �
             args.result = 1;
             args.count = 2;
             args.mod = mod;
-            int i;
-            int end = ((k - 1) % threads_num) == 0 ? (k - 1) / threads_num : (k - 1) / threads_num + 1; // k - 1 нужное число итераций
-            for (i = 0; i < end; i++) 
+            args.end = k;
+            int iterations = k - 1;
+            int end_count;
+            if (threads_num >= k)
             {
-                int needed_threads;
-                pthread_t threads[threads_num];
-                if ((i + 1) * threads_num <= (k - 1)) // Если число потоков таково, что на данном шаге они будут задействованы все
+                end_count = 1;
+            }
+            else
+            {
+                if (iterations % threads_num)
                 {
-                    needed_threads = threads_num;
+                    end_count = iterations / threads_num - 1;
                 }
                 else
                 {
-                    needed_threads = (k - 1) - (i * threads_num); // Число итераций - число, кратное количеству потоков, использованное на предыдущем шаге
+                    end_count = iterations / threads_num;
                 }
-                int j;
-                for (j = 0; j < needed_threads; j++)
+            }
+            args.end_count = end_count;
+            int needed_threads = iterations < threads_num ? iterations : threads_num;
+            int i;
+            pthread_t threads[needed_threads];
+            for (i = 0; i < needed_threads; i++)
+            {
+                if(pthread_create(&threads[i], NULL, (void*)mod_multiply, (void*)&args) != 0)
                 {
-                    if (pthread_create(&threads[j], NULL, (void*)mod_multiply, (void*)&args) != 0)
-                    {
-                        printf("Error with creating thread.\n");
-                        exit(1);
-                    }
+                    printf("Error with creating thread.\n");
+                    exit(1);
                 }
-                for (j = 0; j < needed_threads; j++)
-                {
-                    if (pthread_join(threads[j], NULL) != 0)
+            }
+            for (i = 0; i < needed_threads; i++)
+            {
+                if (pthread_join(threads[i], NULL) != 0)
                     {
                         printf("Error with joining to thread.\n");
                         exit(1);
                     }
-                }
             }
             return args.result;
             }
@@ -160,8 +168,11 @@ int evaluate_mod_factorial(int k, int mod, int threads_num) // Функция, �
 void mod_multiply(struct arguments *args) // Функция, выполняющая шаг вычисления факториала
 {
     pthread_mutex_lock(&mutex);
-    args->result *= args->count % args->mod;            // result *= (count % mod)
-    args->result %= args->mod;                          // result %= mod
-    args->count++;                                      // count++
+    while ((args->count <= args->count + args->end_count) && (args->count <= args->end))
+    {
+        args->result *= args->count % args->mod;    // result *= (count % mod)
+        args->result %= args->mod;                  // result %= mod
+        args->count++;                              // count++
+    }
     pthread_mutex_unlock(&mutex);
 }
