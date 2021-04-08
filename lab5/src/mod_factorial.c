@@ -4,8 +4,15 @@
 #include <stdbool.h>
 #include <getopt.h>
 
+struct arguments
+{
+    int result;
+    int count;
+    int mod;
+};
+
 int evaluate_mod_factorial(int k, int mod, int threads_num); // Функция, организующая потоки для вычисления факториала
-void mod_multiply(int** arguments); // Функция, выполняющая шаг вычисления факториала
+void mod_multiply(struct arguments *args); // Функция, выполняющая шаг вычисления факториала
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -107,12 +114,11 @@ int evaluate_mod_factorial(int k, int mod, int threads_num) // Функция, �
             }
             else
             {
-            int result = 1;
             int count = 2;
-            int* arguments[3]; // Массив аргументов для функции mod_multply
-            arguments[0] = &result;
-            arguments[1] = &count;
-            arguments[2] = &mod;
+            struct arguments args;
+            args.result = 1;
+            args.count = 2;
+            args.mod = mod;
             int i;
             int end = ((k - 1) % threads_num) == 0 ? (k - 1) / threads_num : (k - 1) / threads_num + 1; // k - 1 нужное число итераций
             for (i = 0; i < end; i++) 
@@ -130,7 +136,7 @@ int evaluate_mod_factorial(int k, int mod, int threads_num) // Функция, �
                 int j;
                 for (j = 0; j < needed_threads; j++)
                 {
-                    if (pthread_create(&threads[j], NULL, (void*)mod_multiply, (void*)arguments) != 0)
+                    if (pthread_create(&threads[j], NULL, (void*)mod_multiply, (void*)&args) != 0)
                     {
                         printf("Error with creating thread.\n");
                         exit(1);
@@ -145,17 +151,17 @@ int evaluate_mod_factorial(int k, int mod, int threads_num) // Функция, �
                     }
                 }
             }
-            return result;
+            return args.result;
             }
         }
     }
 }
 
-void mod_multiply(int** arguments) // Функция, выполняющая шаг вычисления факториала
+void mod_multiply(struct arguments *args) // Функция, выполняющая шаг вычисления факториала
 {
     pthread_mutex_lock(&mutex);
-    *arguments[0] *= (*arguments[1] % *arguments[2]);   // result *= (count % mod)
-    *arguments[0] %= *arguments[2];                     // result %= mod
-    (*arguments[1])++;                                  // count++
+    args->result *= args->count % args->mod;            // result *= (count % mod)
+    args->result %= args->mod;                          // result %= mod
+    args->count++;                                      // count++
     pthread_mutex_unlock(&mutex);
 }
