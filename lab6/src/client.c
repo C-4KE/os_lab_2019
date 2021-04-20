@@ -97,15 +97,17 @@ int main(int argc, char **argv) {
         {
             while (getc(file) != EOF)
             {
+                if (count != 0)
+                {
+                    ports = (int*)realloc(ports, (count + 1) * sizeof(int));
+                }
                 fseek(file, -1, SEEK_CUR);
                 char buff[30];
                 fgets(buff, 29, file);
                 int read_port = atoi(buff);
                 ports[count] = read_port;
                 count++;
-                ports = (int*)realloc(ports, (count + 1) * sizeof(int));
             }
-            count++; // Чтобы эта переменная показывала число серверов
         }
         else
         {
@@ -136,6 +138,7 @@ int main(int argc, char **argv) {
 
   // TODO: for one server here, rewrite with servers from file
   unsigned int servers_num = k > count ? count : k; // Если серверов больше, чем k, берем кол-во серверов, иначе k
+  printf("servers_num = %d\n", servers_num);
   struct Server *to = malloc(sizeof(struct Server) * servers_num);
   // TODO: delete this and parallel work between servers
   to[0].port = 20001;
@@ -151,7 +154,7 @@ int main(int argc, char **argv) {
     int end_count;
     if (servers_num >= k)
     {
-        end_count = 1;
+        end_count = 0;
     }
     else
     {
@@ -165,7 +168,8 @@ int main(int argc, char **argv) {
         }
     }
     int current_begin = 1;
-    uint64_t answer = 0;
+    uint64_t answer = 1;
+    bool is_end = false; // Флаг для конца подсчета
 
   // TODO: work continiously, rewrite to make parallel
   for (int i = 0; i < servers_num; i++) {
@@ -198,32 +202,36 @@ int main(int argc, char **argv) {
     // parallel between servers
     uint64_t begin = current_begin;
     uint64_t end = current_begin + end_count <= k ? current_begin + end_count : k;
+    current_begin = end < k ? end + 1 : k;
 
+    if (!is_end) // Для избежания ситуации, когда сервер вызывается для подсчета того, что уже посчитано
+    {
+        char task[sizeof(uint64_t) * 3];
+        memcpy(task, &begin, sizeof(uint64_t));
+        memcpy(task + sizeof(uint64_t), &end, sizeof(uint64_t));
+        memcpy(task + 2 * sizeof(uint64_t), &mod, sizeof(uint64_t));
 
+        if (send(sck, task, sizeof(task), 0) < 0) {
+            fprintf(stderr, "Send failed\n");
+            free(ports);
+            exit(1);
+        }
 
-    char task[sizeof(uint64_t) * 3];
-    memcpy(task, &begin, sizeof(uint64_t));
-    memcpy(task + sizeof(uint64_t), &end, sizeof(uint64_t));
-    memcpy(task + 2 * sizeof(uint64_t), &mod, sizeof(uint64_t));
+        char response[sizeof(uint64_t)];
+        if (recv(sck, response, sizeof(response), 0) < 0) {
+            fprintf(stderr, "Recieve failed\n");
+            free(ports);
+            exit(1);
+        }
 
-    if (send(sck, task, sizeof(task), 0) < 0) {
-      fprintf(stderr, "Send failed\n");
-      free(ports);
-      exit(1);
+        // TODO: from one server
+        // unite results
+        uint64_t current_answer = 0;
+        memcpy(&current_answer, response, sizeof(uint64_t));
+        answer = MultModulo(current_answer, answer, mod);
     }
 
-    char response[sizeof(uint64_t)];
-    if (recv(sck, response, sizeof(response), 0) < 0) {
-      fprintf(stderr, "Recieve failed\n");
-      free(ports);
-      exit(1);
-    }
-
-    // TODO: from one server
-    // unite results
-    uint64_t current_answer = 0;
-    memcpy(&current_answer, response, sizeof(uint64_t));
-    answer = MultModulo();
+    is_end = (end == k);
 
     close(sck);
   }
