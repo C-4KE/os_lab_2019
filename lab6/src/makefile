@@ -5,11 +5,14 @@ FLAGS=-I.
 
 all: server client
 
-server: 
-	$(CC) server.c -o server -lpthread $(FLAGS)
+server: MultModulo.o MultModulo.h
+	$(CC) MultModulo.o server.c -o server -lpthread $(FLAGS)
 
-client:
-	$(CC) client.c -o client $(FLAGS)
+client: MultModulo.o MultModulo.h
+	$(CC) MultModulo.o client.c -o client $(FLAGS)
+
+MultModulo.o: MultModulo.h
+	$(CC) -c MultModulo.c -o MultModulo.o $(FLAGS)
 
 clean:
-	rm server client ports_list.txt
+	rm server client ports_list.txt MultModulo.o
