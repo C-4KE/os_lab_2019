@@ -138,7 +138,6 @@ int main(int argc, char **argv) {
 
   // TODO: for one server here, rewrite with servers from file
   unsigned int servers_num = k > count ? count : k; // Если серверов больше, чем k, берем кол-во серверов, иначе k
-  printf("servers_num = %d\n", servers_num);
   struct Server *to = malloc(sizeof(struct Server) * servers_num);
   // TODO: delete this and parallel work between servers
   to[0].port = 20001;
