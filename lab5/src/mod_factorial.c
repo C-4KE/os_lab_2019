@@ -132,11 +132,11 @@ int evaluate_mod_factorial(int k, int mod, int threads_num) // Функция, �
             {
                 if (iterations % threads_num)
                 {
-                    end_count = iterations / threads_num + 1;
+                    end_count = iterations / threads_num;
                 }
                 else
                 {
-                    end_count = iterations / threads_num;
+                    end_count = iterations / threads_num - 1;
                 }
             }
             args.end_count = end_count;
