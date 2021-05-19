@@ -8,12 +8,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <stdbool.h>
+#include <getopt.h>
+
 #define SERV_PORT 20001
 #define BUFSIZE 1024
 #define SADDR struct sockaddr
 #define SLEN sizeof(struct sockaddr_in)
 
-int main() {
+int main(int argc, char *argv[]) {
   int buff_size = -1;
   int server_port = -1;
   
@@ -65,7 +68,7 @@ int main() {
     }
   }
 
-  if (!strlen(ip_address) || buff_size == -1 || server_port == -1) {
+  if (buff_size == -1 || server_port == -1) {
     fprintf(stderr, "Using: %s --buff_size 1024 --server_port 20001\n",
             argv[0]);
     return 1;

@@ -7,6 +7,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <stdbool.h>
+#include <getopt.h>
+
 //#define BUFSIZE 100
 #define SADDR struct sockaddr
 #define SIZE sizeof(struct sockaddr_in)
