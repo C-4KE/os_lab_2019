@@ -102,6 +102,12 @@ int main(int argc, char **argv) {
   write(1, "Enter string\n", 13);
 
   while ((n = read(0, sendline, buff_size)) > 0) {
+
+    if (!strcmp("END\n", sendline))
+    {
+        break;
+    }
+
     if (sendto(sockfd, sendline, n, 0, (SADDR *)&servaddr, SLEN) == -1) {
       perror("sendto problem");
       exit(1);

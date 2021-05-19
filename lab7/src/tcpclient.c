@@ -109,6 +109,12 @@ int main(int argc, char *argv[]) {
 
   write(1, "Input message to send\n", 22);
   while ((nread = read(0, buf, buff_size)) > 0) {
+
+    if (!strcmp("END\n", buf))
+    {
+        break;
+    }
+
     if (write(fd, buf, nread) < 0) {
       perror("write");
       exit(1);
