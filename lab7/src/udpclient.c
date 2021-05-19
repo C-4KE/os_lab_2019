@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
       switch (option_index) {
       case 0:
         // IP-адрес
-        memcpy(ip_address, optarg, strlen(optarg));
+        strcpy(ip_address, optarg);
         break;
       case 1:
         // Размер буфера
